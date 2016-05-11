@@ -149,18 +149,35 @@ if (!empty($postStr)){
                     $problem_with_text = substr($form_Content,6);
                     $problem = substr($problem_with_text,0,strlen($problem_with_text)-strlen($answer)-6);
                     if($res == "问："){
-                        require 'config.php';
-                        $insert="insert into answer(problem,answer) values('$problem','$answer')";
-                        @mysql_query($insert) or die('新增错误：'.mysql_error());
-                        $return_str="你问的问题是：" . $problem . "\n" . "你的答案是：" . $answer . "\n" . "你的问答已录入数据库，即刻可进行问答聊天。不信你可以试试看~";
-                        $resultStr=sprintf($textTpl, $fromUsername, $toUsername, $time, $msgType, $return_str);
+                        $find = "select * from answer where problem=\"$problem\"";
+                        $result = mysql_query($find);
+                        $ltresult = mysql_fetch_array($result);
+                        $data=$ltresult['answer'];
+                        if($data!=null){
+                            $resultStr=sprintf($textTpl, $fromUsername, $toUsername, $time, $msgType, "已经存在这个对话咯，换个问题试试？");
                         echo $resultStr;
                         exit;
+                        }else{
+                            require 'config.php';
+                            $insert="insert into answer(problem,answer) values('$problem','$answer')";
+                            @mysql_query($insert) or die('新增错误：'.mysql_error());
+                            $return_str="你问的问题是：" . $problem . "\n" . "你的答案是：" . $answer . "\n" . "你的问答已录入数据库，即刻可进行问答聊天。不信你可以试试看~";
+                            $resultStr=sprintf($textTpl, $fromUsername, $toUsername, $time, $msgType, $return_str);
+                            echo $resultStr;
+                            exit;
+                        }
+                        
                     }else{
-                        $return_str="请输入字母编码进入功能：\n\n";
-                        $return_arr=array("lt.聊天\n","ip.查询IP\n","wb.文本管理\n","xx.学习功能\n","tg.听歌");
-                        $return_str.=implode("",$return_arr);
-                        $msgType = "text";
+                        $res = mysql_query("select * from answer");
+                        $data="";
+                        while ($row = mysql_fetch_array($res)) {
+                        	$str = $row['answer'].",";
+                        	$data = $data.$str;
+                        
+                        }
+                        $arr = explode(",",$data);
+                        $result=array_rand($arr,1);
+                        $return_str = $arr[$result];
                         $resultStr = sprintf($textTpl, $fromUsername, $toUsername, $time, $msgType, $return_str);
                         echo $resultStr;
                         exit;
@@ -172,10 +189,13 @@ if (!empty($postStr)){
             //否则提示输入
             else
             {
+                $return_str="请输入字母编码进入功能：\n\n";
+                $return_arr=array("lt.聊天\n","ip.查询IP\n","wb.文本管理\n","xx.学习功能\n","tg.听歌");
+                $return_str.=implode("",$return_arr);
                 $msgType = "text";
-                $resultStr = sprintf($textTpl, $fromUsername, $toUsername, $time, $msgType, "请输入些什么吧……");
+                $resultStr = sprintf($textTpl, $fromUsername, $toUsername, $time, $msgType, $return_str);
                 echo $resultStr;
-                exit;                                   
+                exit;
             }          
           }
         
@@ -188,14 +208,13 @@ if (!empty($postStr)){
             //订阅事件
             if($form_Event=="subscribe")
             {
-              //回复欢迎文字消息
-              $msgType = "text";
-              $contentStr = "感谢您关注！[愉快]\n\n随便发信息跟我来互动吧~[玫瑰]";
-              $resultStr = sprintf($textTpl, $fromUsername, $toUsername, time(), $msgType, $contentStr);
-              
-              
-              echo $resultStr;
-              exit;
+            $return_str="感谢您关注！[愉快]\n\n随便发信息跟我来互动吧~[玫瑰]\n也可以输入以下字母编码进入功能：\n\n";
+            $return_arr=array("lt.聊天\n","ip.查询IP\n","wb.文本管理\n","xx.学习功能\n","tg.听歌");
+            $return_str.=implode("",$return_arr);
+            $msgType = "text";
+            $resultStr = sprintf($textTpl, $fromUsername, $toUsername, $time, $msgType, $return_str);
+            echo $resultStr;
+            exit;
 	      
             }
           
